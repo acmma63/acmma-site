@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ACMMA – Expert Méthodes Maintenance Industrielle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blanc:     #FFFFFF;
+      --fond:      #F8F7F4;
+      --bord:      #E2E0D9;
+      --texte2:    #6B6860;
+      --noir:      #1C1C1A;
+      --bleu:      #1B4FD8;
+      --bleu2:     #1440B8;
+      --bleu-pale: #EEF2FF;
+      --ft: 'Cormorant Garamond', Georgia, serif;
+      --fc: 'DM Sans', system-ui, sans-serif;
+      --r:  6px;
+      --tr: 0.25s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--fc); color: var(--noir); line-height: 1.65; -webkit-font-smoothing: antialiased; overflow-x: hidden; background: var(--fond); }
+    a { color: inherit; text-decoration: none; }
+    .container { max-width: 1140px; margin: 0 auto; padding: 0 2.5rem; }
+
+    /* ============================================================
+       ANIMATIONS CSS — engrenages qui tournent
+    ============================================================ */
+    @keyframes spin-cw  { from { transform: rotate(0deg);   } to { transform: rotate(360deg);  } }
+    @keyframes spin-ccw { from { transform: rotate(0deg);   } to { transform: rotate(-360deg); } }
+    @keyframes kpi-draw { from { stroke-dashoffset: 900; }   to { stroke-dashoffset: 0; } }
+    @keyframes kpi-loop { 0%,100% { stroke-dashoffset: 0; } 50% { stroke-dashoffset: -900; } }
+    @keyframes pulse    { 0%,100% { opacity: 0.18; }         50% { opacity: 0.32; } }
+    @keyframes slide-r  { from { transform: translateX(-60px); opacity:0; } to { transform: translateX(0); opacity:1; } }
+
+    /* ============================================================
+       UTILITAIRES
+    ============================================================ */
+    .label-section { display: inline-block; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--bleu); margin-bottom: 0.9rem; }
+    h2.titre { font-family: var(--ft); font-size: clamp(1.9rem, 3vw, 2.8rem); font-weight: 700; line-height: 1.13; }
+    p.sous { font-size: 1rem; color: var(--texte2); line-height: 1.8; max-width: 540px; }
+    .btn { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.75rem 1.55rem; border-radius: var(--r); font-family: var(--fc); font-size: 0.88rem; font-weight: 500; border: 2px solid transparent; cursor: pointer; transition: background var(--tr), border-color var(--tr), transform var(--tr); }
+    .btn-p { background: var(--bleu); color: #fff; border-color: var(--bleu); }
+    .btn-p:hover { background: var(--bleu2); border-color: var(--bleu2); transform: translateY(-2px); }
+    .btn-s { background: rgba(255,255,255,0.85); color: var(--noir); border-color: var(--bord); }
+    .btn-s:hover { border-color: var(--noir); transform: translateY(-2px); }
+
+    /* ============================================================
+       NAVBAR
+    ============================================================ */
+    #navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(248,247,244,0.95); backdrop-filter: blur(14px); border-bottom: 1px solid transparent; transition: border-color var(--tr), box-shadow var(--tr); }
+    #navbar.scrolled { border-bottom-color: var(--bord); box-shadow: 0 1px 14px rgba(0,0,0,0.07); }
+    .nav-in { display: flex; align-items: center; justify-content: space-between; height: 66px; }
+    .logo { font-family: var(--ft); font-size: 1.7rem; font-weight: 700; letter-spacing: 0.04em; }
+    .logo span { color: var(--bleu); }
+    .nav-links { display: flex; gap: 2.4rem; list-style: none; }
+    .nav-links a { font-size: 0.84rem; font-weight: 500; color: var(--texte2); transition: color var(--tr); }
+    .nav-links a:hover { color: var(--noir); }
+    .burger { display: none; background: none; border: none; cursor: pointer; color: var(--noir); padding: 4px; }
+    #mob { display: none; position: fixed; inset: 66px 0 0 0; background: rgba(248,247,244,0.98); backdrop-filter: blur(14px); z-index: 99; flex-direction: column; align-items: center; justify-content: center; gap: 2rem; border-top: 1px solid var(--bord); }
+    #mob.open { display: flex; }
+    #mob a { font-size: 1.2rem; font-weight: 500; }
+
+    /* ============================================================
+       HERO — avec fond animé industriel visible
+    ============================================================ */
+    #hero {
+      position: relative;
+      padding: 138px 0 96px;
+      background: #EEF2FF;          /* fond bleu très pâle pour que les animations ressortent */
+      border-bottom: 1px solid var(--bord);
+      overflow: hidden;
+    }
+
+    /* Contenu hero au-dessus des animations */
+    #hero .container { position: relative; z-index: 2; }
+
+    /* --- Engrenages SVG positionnés en déco --- */
+    .gear-wrap {
+      position: absolute;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .gear-wrap svg { display: block; }
+
+    /* Engrenage grand haut droite */
+    .g1 { top: -60px; right: -60px; }
+    .g1 svg { animation: spin-cw 18s linear infinite; }
+
+    /* Engrenage moyen bas gauche */
+    .g2 { bottom: -40px; left: -40px; }
+    .g2 svg { animation: spin-ccw 22s linear infinite; }
+
+    /* Engrenage petit milieu droite */
+    .g3 { top: 40%; right: 5%; }
+    .g3 svg { animation: spin-cw 12s linear infinite; }
+
+    /* Engrenage très petit haut gauche */
+    .g4 { top: 80px; left: 8%; }
+    .g4 svg { animation: spin-ccw 9s linear infinite; }
+
+    /* --- Courbe KPI animée en bas du hero --- */
+    .kpi-svg {
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 100%; height: 140px;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .kpi-line-1 {
+      stroke-dasharray: 900;
+      stroke-dashoffset: 900;
+      animation: kpi-draw 3s ease-out 0.5s forwards, kpi-loop 8s ease-in-out 3.5s infinite;
+    }
+    .kpi-line-2 {
+      stroke-dasharray: 900;
+      stroke-dashoffset: 900;
+      animation: kpi-draw 3s ease-out 1s forwards, kpi-loop 10s ease-in-out 4s infinite;
+    }
+    .kpi-dots { animation: pulse 3s ease-in-out infinite; }
+
+    /* Texte hero */
+    .hero-badge { display: inline-flex; align-items: center; gap: 0.48rem; background: rgba(255,255,255,0.9); color: var(--bleu); font-size: 0.75rem; font-weight: 500; padding: 0.36rem 0.88rem; border-radius: 100px; border: 1px solid #c7d7fc; margin-bottom: 1.55rem; }
+    .hero-h1 { font-family: var(--ft); font-size: clamp(3rem, 5.5vw, 5.2rem); font-weight: 700; line-height: 1.05; max-width: 780px; margin-bottom: 1.35rem; }
+    .hero-h1 em { font-style: italic; color: var(--bleu); }
+    .hero-sub { font-size: 1.06rem; color: var(--texte2); max-width: 520px; line-height: 1.85; margin-bottom: 2.4rem; }
+    .hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 3.8rem; }
+
+    .stats { display: inline-flex; border: 1px solid rgba(27,79,216,0.2); border-radius: var(--r); overflow: hidden; gap: 1px; background: rgba(27,79,216,0.1); }
+    .stat { background: rgba(255,255,255,0.9); padding: 1.25rem 2.2rem; text-align: center; }
+    .stat-n { font-family: var(--ft); font-size: 2rem; font-weight: 700; color: var(--bleu); line-height: 1; margin-bottom: 0.22rem; }
+    .stat-l { font-size: 0.75rem; color: var(--texte2); line-height: 1.4; }
+
+    /* ============================================================
+       SERVICES
+    ============================================================ */
+    #services { padding: 96px 0; background: var(--blanc); }
+    .sec-head { margin-bottom: 2.8rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.15rem; }
+    .grid-2 { display: flex; justify-content: center; gap: 1.15rem; margin-top: 1.15rem; }
+    .grid-2 .card { width: calc(33.333% - 0.58rem); }
+    .card { background: var(--blanc); border: 1px solid var(--bord); border-radius: var(--r); padding: 1.85rem 2rem; transition: box-shadow var(--tr), transform var(--tr), border-color var(--tr); }
+    .card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.10); border-color: var(--bleu); transform: translateY(-4px); }
+    .card-ico { width: 44px; height: 44px; background: var(--bleu-pale); border-radius: var(--r); display: flex; align-items: center; justify-content: center; color: var(--bleu); margin-bottom: 1.05rem; }
+    .card h3 { font-family: var(--ft); font-size: 1.22rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .card p { font-size: 0.87rem; color: var(--texte2); line-height: 1.75; }
+    .badge-card { display: inline-block; margin-top: 0.85rem; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bleu); background: var(--bleu-pale); padding: 0.17rem 0.52rem; border-radius: 4px; }
+
+    /* ============================================================
+       POURQUOI
+    ============================================================ */
+    #pourquoi { padding: 96px 0; background: var(--fond); border-top: 1px solid var(--bord); border-bottom: 1px solid var(--bord); }
+    .pq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5.5rem; align-items: center; }
+    .pq-txt h2 { margin-bottom: 0.9rem; }
+    .pq-txt p.sous { margin-bottom: 2.2rem; }
+    .pts { display: flex; flex-direction: column; gap: 1.55rem; }
+    .pt { display: flex; gap: 1.05rem; align-items: flex-start; }
+    .pt-ico { flex-shrink: 0; width: 37px; height: 37px; border-radius: 50%; background: var(--bleu); color: #fff; display: flex; align-items: center; justify-content: center; }
+    .pt h4 { font-family: var(--ft); font-size: 1.08rem; font-weight: 700; margin-bottom: 0.18rem; }
+    .pt p { font-size: 0.85rem; color: var(--texte2); line-height: 1.7; }
+
+    /* ============================================================
+       ZONE
+    ============================================================ */
+    #zone { padding: 88px 0; background: var(--noir); color: #fff; }
+    .zone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+    .zone-txt .label-section { color: #93A8F5; }
+    .zone-txt h2 { color: #fff; margin-bottom: 0.9rem; }
+    .zone-txt p.sous { color: rgba(255,255,255,0.55); }
+    .zone-cards { display: flex; flex-direction: column; gap: 0.85rem; }
+    .zcard { display: flex; align-items: center; gap: 1.05rem; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--r); padding: 1.15rem 1.45rem; transition: background var(--tr); }
+    .zcard:hover { background: rgba(255,255,255,0.12); }
+    .zcard-ico { color: #93A8F5; flex-shrink: 0; }
+    .zcard-t { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #93A8F5; margin-bottom: 0.13rem; }
+    .zcard-d { font-size: 0.88rem; color: rgba(255,255,255,0.76); }
+
+    /* ============================================================
+       CONTACT
+    ============================================================ */
+    #contact { padding: 96px 0; background: var(--blanc); }
+    .ct-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 5.5rem; align-items: start; }
+    .ct-info h2 { margin-bottom: 0.9rem; }
+    .ct-info p.sous { margin-bottom: 2.2rem; }
+    .ct-list { display: flex; flex-direction: column; gap: 1.05rem; }
+    .ct-item { display: flex; align-items: center; gap: 0.82rem; font-size: 0.9rem; }
+    .ct-item-ico { width: 33px; height: 33px; background: var(--bleu-pale); color: var(--bleu); border-radius: var(--r); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .form-box { background: var(--blanc); border: 1px solid var(--bord); border-radius: var(--r); padding: 2.5rem; box-shadow: 0 2px 22px rgba(0,0,0,0.07); }
+    .fg { margin-bottom: 1.15rem; }
+    .fg label { display: block; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.36rem; }
+    .fg input, .fg select, .fg textarea { width: 100%; padding: 0.7rem 0.92rem; border: 1px solid var(--bord); border-radius: var(--r); background: var(--fond); font-family: var(--fc); font-size: 0.9rem; color: var(--noir); outline: none; appearance: none; transition: border-color var(--tr), box-shadow var(--tr); }
+    .fg input:focus, .fg select:focus, .fg textarea:focus { border-color: var(--bleu); box-shadow: 0 0 0 3px rgba(27,79,216,0.1); }
+    .fg textarea { resize: vertical; min-height: 120px; }
+    .fg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .btn-send { width: 100%; justify-content: center; padding: 0.88rem; font-size: 0.92rem; margin-top: 0.35rem; }
+    #ok { display: none; text-align: center; padding: 2.5rem; }
+    #ok.show { display: block; }
+    #ok .ok-ico { width: 52px; height: 52px; background: #DCFCE7; color: #16A34A; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
+    #ok h3 { font-family: var(--ft); font-size: 1.4rem; margin-bottom: 0.42rem; }
+    #ok p { color: var(--texte2); font-size: 0.92rem; }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    footer { background: var(--noir); color: rgba(255,255,255,0.4); padding: 2.3rem 0; }
+    .ft-in { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+    .ft-logo { font-family: var(--ft); font-size: 1.35rem; font-weight: 700; color: #fff; }
+    .ft-logo span { color: #93A8F5; }
+    .ft-m { font-size: 0.77rem; text-align: center; line-height: 1.7; }
+    .ft-ct { font-size: 0.79rem; text-align: right; line-height: 1.9; }
+    .ft-ct a { color: rgba(255,255,255,0.4); transition: color var(--tr); }
+    .ft-ct a:hover { color: #fff; }
+
+    /* ============================================================
+       FADE-IN
+    ============================================================ */
+    .fi { opacity: 0; transform: translateY(18px); transition: opacity 0.5s ease, transform 0.5s ease; }
+    .fi.on { opacity: 1; transform: none; }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 960px) {
+      .nav-links, .nav-links + .btn { display: none; }
+      .burger { display: block; }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+      .grid-2 .card { width: calc(50% - 0.58rem); }
+      .pq-grid, .zone-grid, .ct-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .fg2 { grid-template-columns: 1fr; }
+      .stats { flex-direction: column; }
+      .g3 { display: none; }
+    }
+    @media (max-width: 580px) {
+      .container { padding: 0 1.2rem; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .grid-2 { flex-direction: column; }
+      .grid-2 .card { width: 100%; }
+      .hero-h1 { font-size: 2.8rem; }
+      .ft-in { flex-direction: column; text-align: center; }
+      .ft-ct { text-align: center; }
+      .g4 { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav id="navbar">
+    <div class="container">
+      <div class="nav-in">
+        <a href="#" class="logo">ACMM<span>A</span></a>
+        <ul class="nav-links">
+          <li><a href="#services">Prestations</a></li>
+          <li><a href="#pourquoi">Approche</a></li>
+          <li><a href="#zone">Intervention</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+        <a href="#contact" class="btn btn-p" style="font-size:0.82rem;padding:0.5rem 1.15rem;">Demander un devis</a>
+        <button class="burger" id="burger" aria-label="Menu">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div id="mob">
+    <a href="#services">Prestations</a>
+    <a href="#pourquoi">Approche</a>
+    <a href="#zone">Intervention</a>
+    <a href="#contact">Contact</a>
+    <a href="#contact" class="btn btn-p">Demander un devis</a>
+  </div>
+
+  <main>
+
+    <!-- ====================================================
+         HERO — fond bleu pâle avec engrenages + courbe KPI
+    ==================================================== -->
+    <section id="hero">
+
+      <!-- ENGRENAGE 1 — grand, coin haut droite -->
+      <div class="gear-wrap g1">
+        <svg width="220" height="220" viewBox="-110 -110 220 220" fill="none" stroke="rgba(27,79,216,0.22)" stroke-width="2">
+          <!-- Corps engrenage 14 dents -->
+          <path d="M 85 -14 L 100 -7 L 100 7 L 85 14 Q 82 30 72 42 L 78 56 L 66 66 L 52 60 Q 38 70 22 73 L 16 88 L 0 90 L -16 88 L -22 73 Q -38 70 -52 60 L -66 66 L -78 56 L -72 42 Q -82 30 -85 14 L -100 7 L -100 -7 L -85 -14 Q -82 -30 -72 -42 L -78 -56 L -66 -66 L -52 -60 Q -38 -70 -22 -73 L -16 -88 L 0 -90 L 16 -88 L 22 -73 Q 38 -70 52 -60 L 66 -66 L 78 -56 L 72 -42 Q 82 -30 85 -14 Z"/>
+          <circle cx="0" cy="0" r="28" stroke-width="1.5"/>
+          <circle cx="0" cy="0" r="8"/>
+          <circle cx="42" cy="0" r="7"/>
+          <circle cx="-42" cy="0" r="7"/>
+          <circle cx="0" cy="42" r="7"/>
+          <circle cx="0" cy="-42" r="7"/>
+        </svg>
+      </div>
+
+      <!-- ENGRENAGE 2 — moyen, coin bas gauche -->
+      <div class="gear-wrap g2">
+        <svg width="160" height="160" viewBox="-80 -80 160 160" fill="none" stroke="rgba(27,79,216,0.22)" stroke-width="2">
+          <path d="M 62 -10 L 75 -5 L 75 5 L 62 10 Q 58 22 50 30 L 55 42 L 46 51 L 34 46 Q 24 54 12 57 L 8 70 L 0 72 L -8 70 L -12 57 Q -24 54 -34 46 L -46 51 L -55 42 L -50 30 Q -58 22 -62 10 L -75 5 L -75 -5 L -62 -10 Q -58 -22 -50 -30 L -55 -42 L -46 -51 L -34 -46 Q -24 -54 -12 -57 L -8 -70 L 0 -72 L 8 -70 L 12 -57 Q 24 -54 34 -46 L 46 -51 L 55 -42 L 50 -30 Q 58 -22 62 -10 Z"/>
+          <circle cx="0" cy="0" r="20" stroke-width="1.5"/>
+          <circle cx="0" cy="0" r="6"/>
+          <circle cx="32" cy="0" r="5"/>
+          <circle cx="-32" cy="0" r="5"/>
+          <circle cx="0" cy="32" r="5"/>
+          <circle cx="0" cy="-32" r="5"/>
+        </svg>
+      </div>
+
+      <!-- ENGRENAGE 3 — petit, droite milieu -->
+      <div class="gear-wrap g3">
+        <svg width="100" height="100" viewBox="-50 -50 100 100" fill="none" stroke="rgba(27,79,216,0.20)" stroke-width="1.5">
+          <path d="M 38 -7 L 46 -3 L 46 3 L 38 7 Q 36 14 30 20 L 34 27 L 27 34 L 20 30 Q 14 36 7 38 L 3 46 L -3 46 L -7 38 Q -14 36 -20 30 L -27 34 L -34 27 L -30 20 Q -36 14 -38 7 L -46 3 L -46 -3 L -38 -7 Q -36 -14 -30 -20 L -34 -27 L -27 -34 L -20 -30 Q -14 -36 -7 -38 L -3 -46 L 3 -46 L 7 -38 Q 14 -36 20 -30 L 27 -34 L 34 -27 L 30 -20 Q 36 -14 38 -7 Z"/>
+          <circle cx="0" cy="0" r="13" stroke-width="1.2"/>
+          <circle cx="0" cy="0" r="4"/>
+        </svg>
+      </div>
+
+      <!-- ENGRENAGE 4 — très petit, haut gauche -->
+      <div class="gear-wrap g4">
+        <svg width="70" height="70" viewBox="-35 -35 70 70" fill="none" stroke="rgba(27,79,216,0.18)" stroke-width="1.5">
+          <path d="M 26 -5 L 32 -2 L 32 2 L 26 5 Q 24 10 20 14 L 23 19 L 18 24 L 13 21 Q 9 25 4 26 L 2 32 L -2 32 L -5 26 Q -9 25 -13 21 L -18 24 L -23 19 L -20 14 Q -24 10 -26 5 L -32 2 L -32 -2 L -26 -5 Q -24 -10 -20 -14 L -23 -19 L -18 -24 L -13 -21 Q -9 -25 -4 -26 L -2 -32 L 2 -32 L 5 -26 Q 9 -25 13 -21 L 18 -24 L 23 -19 L 20 -14 Q 24 -10 26 -5 Z"/>
+          <circle cx="0" cy="0" r="9"/>
+          <circle cx="0" cy="0" r="3"/>
+        </svg>
+      </div>
+
+      <!-- COURBE KPI ANIMÉE en bas du hero -->
+      <svg class="kpi-svg" viewBox="0 0 1440 140" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Courbe bleue principale (MTBF) -->
+        <polyline class="kpi-line-1"
+          points="0,110 80,95 160,105 240,80 320,88 400,65 480,72 560,50 640,58 720,42 800,48 880,30 960,38 1040,22 1120,28 1200,15 1280,20 1360,10 1440,14"
+          fill="none" stroke="rgba(27,79,216,0.45)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Courbe verte (disponibilité) -->
+        <polyline class="kpi-line-2"
+          points="0,120 80,115 160,118 240,105 320,110 400,98 480,102 560,88 640,94 720,80 800,85 880,72 960,76 1040,64 1120,68 1200,58 1280,62 1360,52 1440,55"
+          fill="none" stroke="rgba(16,185,129,0.35)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Points de données -->
+        <g class="kpi-dots" fill="rgba(27,79,216,0.5)">
+          <circle cx="240" cy="80" r="4"/><circle cx="400" cy="65" r="4"/>
+          <circle cx="560" cy="50" r="4"/><circle cx="720" cy="42" r="4"/>
+          <circle cx="880" cy="30" r="4"/><circle cx="1040" cy="22" r="4"/>
+          <circle cx="1200" cy="15" r="4"/><circle cx="1360" cy="10" r="4"/>
+        </g>
+        <!-- Étiquettes KPI -->
+        <text x="30" y="30" font-family="DM Sans,sans-serif" font-size="11" fill="rgba(27,79,216,0.5)" font-weight="600">MTBF ↑</text>
+        <text x="30" y="48" font-family="DM Sans,sans-serif" font-size="11" fill="rgba(16,185,129,0.6)" font-weight="600">Disponibilité ↑</text>
+      </svg>
+
+      <!-- Contenu textuel -->
+      <div class="container">
+        <div class="hero-badge fi">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+          Micro-entreprise &ndash; M&eacute;thodes &amp; Maintenance Industrielle
+        </div>
+        <h1 class="hero-h1 fi">Structurez votre<br /><em>maintenance</em><br />d&egrave;s aujourd&rsquo;hui.</h1>
+        <p class="hero-sub fi">ACMMA accompagne les PME et structures industrielles dans la mise en place de m&eacute;thodes de maintenance efficaces &mdash; pr&eacute;ventives, planifi&eacute;es, mesur&eacute;es.</p>
+        <div class="hero-btns fi">
+          <a href="#contact" class="btn btn-p">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Prendre contact
+          </a>
+          <a href="#services" class="btn btn-s">D&eacute;couvrir les prestations</a>
+        </div>
+        <div class="stats fi">
+          <div class="stat"><div class="stat-n">5</div><div class="stat-l">Prestations<br />sp&eacute;cialis&eacute;es</div></div>
+          <div class="stat"><div class="stat-n">2</div><div class="stat-l">Modes d&rsquo;intervention<br />pr&eacute;sentiel &amp; visio</div></div>
+          <div class="stat"><div class="stat-n">100%</div><div class="stat-l">Sur-mesure<br />selon vos besoins</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SERVICES -->
+    <section id="services">
+      <div class="container">
+        <div class="sec-head fi">
+          <div class="label-section">Prestations</div>
+          <h2 class="titre">Ce que je fais pour vous</h2>
+        </div>
+        <div class="grid-3">
+          <div class="card fi">
+            <div class="card-ico"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></div>
+            <h3>Maintenance Pr&eacute;ventive</h3>
+            <p>Conception et d&eacute;ploiement de plans de maintenance pr&eacute;ventive adapt&eacute;s &agrave; vos &eacute;quipements. R&eacute;duction des arr&ecirc;ts impr&eacute;vus, allongement de la dur&eacute;e de vie des machines.</p>
+            <span class="badge-card">Fiabilit&eacute;</span>
+          </div>
+          <div class="card fi">
+            <div class="card-ico"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+            <h3>Relev&eacute;s &amp; Suivi d&rsquo;Indicateurs</h3>
+            <p>Mise en place de tableaux de bord KPIs maintenance (MTBF, MTTR, taux de disponibilit&eacute;). Donn&eacute;es fiables et exploitables pour piloter votre parc machine.</p>
+            <span class="badge-card">Performance</span>
+          </div>
+          <div class="card fi">
+            <div class="card-ico"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg></div>
+            <h3>Planification &amp; GMAO</h3>
+            <p>Structuration de la planification de vos interventions (pr&eacute;ventif, correctif, am&eacute;lioratif). Aide &agrave; la mise en place ou &agrave; l&rsquo;optimisation de votre outil GMAO.</p>
+            <span class="badge-card">Organisation</span>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card fi">
+            <div class="card-ico"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <h3>Audit &amp; Diagnostic M&eacute;thodes</h3>
+            <p>Analyse de votre organisation maintenance existante. Rapport d&rsquo;audit complet + plan d&rsquo;action prioris&eacute;.</p>
+            <span class="badge-card">Diagnostic</span>
+          </div>
+          <div class="card fi">
+            <div class="card-ico"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <h3>Formation &amp; Accompagnement</h3>
+            <p>Mont&eacute;e en comp&eacute;tences de vos &eacute;quipes. Sessions pr&eacute;sentiel (Puy-de-D&ocirc;me) ou &agrave; distance, adapt&eacute;es &agrave; vos techniciens et responsables.</p>
+            <span class="badge-card">Transfert</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- POURQUOI -->
+    <section id="pourquoi">
+      <div class="container">
+        <div class="pq-grid">
+          <div class="pq-txt fi">
+            <div class="label-section">Approche</div>
+            <h2 class="titre">Une m&eacute;thode rigoureuse,<br />un r&eacute;sultat concret.</h2>
+            <p class="sous">Chaque intervention est construite sur un diagnostic pr&eacute;cis de votre situation. Pas de solution standard : uniquement des outils adapt&eacute;s &agrave; vos contraintes et &agrave; vos &eacute;quipes.</p>
+            <br />
+            <a href="#contact" class="btn btn-p">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              Discutons de votre projet
+            </a>
+          </div>
+          <div class="pts fi">
+            <div class="pt"><div class="pt-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></div><div><h4>Diagnostic avant tout</h4><p>Chaque mission commence par une analyse de l&rsquo;existant pour cibler pr&eacute;cis&eacute;ment les leviers d&rsquo;am&eacute;lioration &agrave; activer.</p></div></div>
+            <div class="pt"><div class="pt-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div><div><h4>Solutions op&eacute;rationnelles</h4><p>Les livrables sont directement utilisables : plans, tableaux de bord, proc&eacute;dures, plannings.</p></div></div>
+            <div class="pt"><div class="pt-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div><h4>Accompagnement dans la dur&eacute;e</h4><p>Suivi post-mission pour ancrer les bonnes pratiques et mesurer les progr&egrave;s dans le temps.</p></div></div>
+            <div class="pt"><div class="pt-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><div><h4>R&eacute;activit&eacute; &amp; flexibilit&eacute;</h4><p>Structure l&eacute;g&egrave;re = r&eacute;ponse rapide. Intervention ponctuelle ou mission longue selon vos besoins.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ZONE -->
+    <section id="zone">
+      <div class="container">
+        <div class="zone-grid">
+          <div class="zone-txt fi">
+            <div class="label-section">Zone d&rsquo;intervention</div>
+            <h2 class="titre">Local ou &agrave; distance,<br />je m&rsquo;adapte.</h2>
+            <p class="sous">Bas&eacute; dans le Puy-de-D&ocirc;me, j&rsquo;interviens en pr&eacute;sentiel sur la r&eacute;gion et en visioconf&eacute;rence sur l&rsquo;ensemble du territoire fran&ccedil;ais.</p>
+          </div>
+          <div class="zone-cards fi">
+            <div class="zcard"><div class="zcard-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div><div class="zcard-t">Pr&eacute;sentiel</div><div class="zcard-d">Puy-de-D&ocirc;me &amp; r&eacute;gion Auvergne &ndash; Intervention directement sur site</div></div></div>
+            <div class="zcard"><div class="zcard-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div><div><div class="zcard-t">Visioconf&eacute;rence</div><div class="zcard-d">France enti&egrave;re &ndash; Accompagnement, audit et formation &agrave; distance</div></div></div>
+            <div class="zcard"><div class="zcard-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div><div><div class="zcard-t">Secteurs</div><div class="zcard-d">Tous secteurs industriels &ndash; PME, ETI, ateliers de production</div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact">
+      <div class="container">
+        <div class="ct-grid">
+          <div class="ct-info fi">
+            <div class="label-section">Contact</div>
+            <h2 class="titre">Parlons de votre projet.</h2>
+            <p class="sous">D&eacute;crivez votre situation et vos besoins. Je reviens vers vous rapidement pour &eacute;tudier comment ACMMA peut vous accompagner.</p>
+            <br />
+            <div class="ct-list">
+              <div class="ct-item"><div class="ct-item-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div><a href="mailto:acmma63@gmail.com">acmma63@gmail.com</a></div>
+              <div class="ct-item"><div class="ct-item-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.62 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><a href="tel:+33676239979">06 76 23 99 79</a></div>
+              <div class="ct-item"><div class="ct-item-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>Puy-de-D&ocirc;me (63) &ndash; France enti&egrave;re en visio</div>
+            </div>
+          </div>
+          <div class="form-box fi">
+            <form id="form" action="https://formspree.io/f/mpqjnjro" method="POST">
+              <input type="hidden" name="_replyto" value="acmma63@gmail.com" />
+              <input type="hidden" name="_subject" value="Nouvelle demande via ACMMA" />
+              <div class="fg2">
+                <div class="fg"><label>Pr&eacute;nom</label><input type="text" name="prenom" placeholder="Jean" required /></div>
+                <div class="fg"><label>Nom</label><input type="text" name="nom" placeholder="Dupont" required /></div>
+              </div>
+              <div class="fg"><label>Entreprise</label><input type="text" name="entreprise" placeholder="Nom de votre soci&eacute;t&eacute;" /></div>
+              <div class="fg"><label>E-mail</label><input type="email" name="email" placeholder="jean.dupont@entreprise.fr" required /></div>
+              <div class="fg"><label>T&eacute;l&eacute;phone (optionnel)</label><input type="tel" name="telephone" placeholder="06 XX XX XX XX" /></div>
+              <div class="fg">
+                <label>Prestation souhait&eacute;e</label>
+                <select name="prestation" required>
+                  <option value="" disabled selected>S&eacute;lectionnez une prestation&hellip;</option>
+                  <option value="preventive">Maintenance pr&eacute;ventive</option>
+                  <option value="kpis">Relev&eacute;s &amp; indicateurs KPIs</option>
+                  <option value="planification">Planification &amp; GMAO</option>
+                  <option value="audit">Audit &amp; diagnostic m&eacute;thodes</option>
+                  <option value="formation">Formation / accompagnement</option>
+                  <option value="autre">Autre / Je ne sais pas encore</option>
+                </select>
+              </div>
+              <div class="fg"><label>Votre besoin</label><textarea name="message" placeholder="D&eacute;crivez votre situation, vos &eacute;quipements, vos probl&eacute;matiques&hellip;" required></textarea></div>
+              <button type="submit" class="btn btn-p btn-send">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Envoyer ma demande
+              </button>
+            </form>
+            <div id="ok">
+              <div class="ok-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <h3>Demande envoy&eacute;e !</h3>
+              <p>Merci pour votre message. Je reviendrai vers vous dans les plus brefs d&eacute;lais.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="ft-in">
+        <div class="ft-logo">ACMM<span>A</span></div>
+        <p class="ft-m">&copy; 2025 ACMMA &ndash; M&eacute;thodes &amp; Maintenance Industrielle<br />Puy-de-D&ocirc;me (63) | France</p>
+        <div class="ft-ct">
+          <a href="mailto:acmma63@gmail.com">acmma63@gmail.com</a><br />
+          <a href="tel:+33676239979">06 76 23 99 79</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    var nb = document.getElementById('navbar');
+    window.addEventListener('scroll', function() { nb.classList.toggle('scrolled', window.scrollY > 20); });
+    var mob = document.getElementById('mob');
+    document.getElementById('burger').addEventListener('click', function() { mob.classList.toggle('open'); });
+    mob.querySelectorAll('a').forEach(function(a) { a.addEventListener('click', function() { mob.classList.remove('open'); }); });
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) { if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fi').forEach(function(el) { io.observe(el); });
+    var form = document.getElementById('form');
+    var okDiv = document.getElementById('ok');
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      fetch(form.action, { method: 'POST', body: new FormData(form), headers: { 'Accept': 'application/json' } })
+        .then(function(r) {
+          if (r.ok) { form.style.display = 'none'; okDiv.classList.add('show'); }
+          else { alert('Erreur. Contactez : acmma63@gmail.com'); }
+        }).catch(function() { alert('Erreur r\u00e9seau. Contactez : acmma63@gmail.com'); });
+    });
+  </script>
+
+</body>
+</html>
